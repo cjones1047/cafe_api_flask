@@ -4,13 +4,13 @@ import random
 
 app = Flask(__name__)
 
-##Connect to Database
+# Connect to Database
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////Users/CaseyJr/Dropbox/100_days_of_python/cafe_api_flask/cafes.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
 
-##Cafe TABLE Configuration
+# Cafe TABLE Configuration
 class Cafe(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(250), unique=True, nullable=False)
@@ -35,17 +35,29 @@ def home():
 
 @app.route("/random")
 def random_cafe():
-    all_cafes = db.session.query(Cafe).all()
-    random_cafe_choice = random.choice(all_cafes)
+    cafes = db.session.query(Cafe).all()
+    random_cafe_choice = random.choice(cafes)
 
     return jsonify(cafe=random_cafe_choice.to_dict())
 
 
 @app.route("/all")
 def all_cafes():
-    all_cafes = db.session.query(Cafe).all()
+    cafes = db.session.query(Cafe).all()
 
-    return jsonify(cafes=[cafe.to_dict() for cafe in all_cafes])
+    return jsonify(cafes=[cafe.to_dict() for cafe in cafes])
+
+
+@app.route("/search")
+def search_cafe_by_location():
+    searched_location = request.args.get("loc").title()
+    cafes_in_location = db.session.query(Cafe).filter(Cafe.location == searched_location)
+    if cafes_in_location.count() > 0:
+        return jsonify(cafes_in_location=[cafe.to_dict() for cafe in cafes_in_location])
+
+    return jsonify(
+        error={"Not found": "Sorry, we don't have a cafe in that location."}
+    )
     
 
 ## HTTP GET - Read Record

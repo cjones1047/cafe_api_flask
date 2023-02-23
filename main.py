@@ -2,6 +2,8 @@ import sqlalchemy.exc
 from flask import Flask, jsonify, render_template, request
 from flask_sqlalchemy import SQLAlchemy
 import random
+import dotenv
+import os
 
 app = Flask(__name__)
 
@@ -9,6 +11,9 @@ app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////Users/CaseyJr/Dropbox/100_days_of_python/cafe_api_flask/cafes.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
+
+dotenv.load_dotenv()
+api_key = os.getenv("API_KEY")
 
 
 # Cafe TABLE Configuration
@@ -93,13 +98,22 @@ def update_price(cafe_id):
     return jsonify(success={"success": f"Successfully updated cafe's coffee price: {cafe_to_update.name}"}), 202
 
 
-## HTTP GET - Read Record
+@app.route("/report_closed/<cafe_id>", methods=["DELETE"])
+def report_closed(cafe_id):
+    if request.args['api_key'] != api_key:
+        return jsonify(error={"Forbidden": "Invalid API key"}), 403
 
-## HTTP POST - Create Record
+    cafe_to_delete = db.session.get(Cafe, cafe_id)
+    if not cafe_to_delete:
+        return jsonify(error={"Not found": "Cafe does not exist in database"}), 404
 
-## HTTP PUT/PATCH - Update Record
+    db.session.delete(cafe_to_delete)
+    try:
+        db.session.commit()
+    except sqlalchemy.exc.IntegrityError as error_message:
+        return jsonify(error={"Could not delete cafe": f"{str(error_message)}"}), 404
 
-## HTTP DELETE - Delete Record
+    return jsonify(success={"success": f"Successfully deleted cafe: {cafe_to_delete.name}"}), 202
 
 
 if __name__ == '__main__':

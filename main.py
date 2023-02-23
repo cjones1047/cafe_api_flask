@@ -1,3 +1,4 @@
+import sqlalchemy.exc
 from flask import Flask, jsonify, render_template, request
 from flask_sqlalchemy import SQLAlchemy
 import random
@@ -58,7 +59,37 @@ def search_cafe_by_location():
     return jsonify(
         error={"Not found": "Sorry, we don't have a cafe in that location."}
     )
-    
+
+
+@app.route("/add")
+def add_cafe():
+    # new_cafe = Cafe(
+    #     name=request.form['name'],
+    #     map_url=request.form['map_url'],
+    #     img_url= db.Column(db.String(500), nullable=False)
+    #     location= db.Column(db.String(250), nullable=False)
+    #     seats = db.Column(db.String(250), nullable=False)
+    #     has_toilet = db.Column(db.Boolean, nullable=False)
+    #     has_wifi = db.Column(db.Boolean, nullable=False)
+    #     has_sockets = db.Column(db.Boolean, nullable=False)
+    #     can_take_calls = db.Column(db.Boolean, nullable=False)
+    #     coffee_price = db.Column(db.String(250), nullable=True)
+    # )
+    cafe_dict = dict(request.form)
+    for key, value in cafe_dict.items():
+        if value.lower() == 'true':
+            cafe_dict[key] = True
+        elif value.lower() == 'false':
+            cafe_dict[key] = False
+    new_cafe = Cafe(**cafe_dict)
+    db.session.add(new_cafe)
+    try:
+        db.session.commit()
+    except sqlalchemy.exc.IntegrityError as error_message:
+        return jsonify(error={"Could not add cafe": f"{str(error_message)}"})
+
+    return jsonify(success={"success": f"Successfully added cafe: {cafe_dict['name']}"})
+
 
 ## HTTP GET - Read Record
 

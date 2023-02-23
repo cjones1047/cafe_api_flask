@@ -58,23 +58,11 @@ def search_cafe_by_location():
 
     return jsonify(
         error={"Not found": "Sorry, we don't have a cafe in that location."}
-    )
+    ), 404
 
 
-@app.route("/add")
+@app.route("/add", methods=["POST"])
 def add_cafe():
-    # new_cafe = Cafe(
-    #     name=request.form['name'],
-    #     map_url=request.form['map_url'],
-    #     img_url= db.Column(db.String(500), nullable=False)
-    #     location= db.Column(db.String(250), nullable=False)
-    #     seats = db.Column(db.String(250), nullable=False)
-    #     has_toilet = db.Column(db.Boolean, nullable=False)
-    #     has_wifi = db.Column(db.Boolean, nullable=False)
-    #     has_sockets = db.Column(db.Boolean, nullable=False)
-    #     can_take_calls = db.Column(db.Boolean, nullable=False)
-    #     coffee_price = db.Column(db.String(250), nullable=True)
-    # )
     cafe_dict = dict(request.form)
     for key, value in cafe_dict.items():
         if value.lower() == 'true':
@@ -86,9 +74,23 @@ def add_cafe():
     try:
         db.session.commit()
     except sqlalchemy.exc.IntegrityError as error_message:
-        return jsonify(error={"Could not add cafe": f"{str(error_message)}"})
+        return jsonify(error={"Could not add cafe": f"{str(error_message)}"}), 404
 
-    return jsonify(success={"success": f"Successfully added cafe: {cafe_dict['name']}"})
+    return jsonify(success={"success": f"Successfully added cafe: {cafe_dict['name']}"}), 202
+
+
+@app.route("/update_price/<cafe_id>", methods=["PATCH"])
+def update_price(cafe_id):
+    cafe_to_update = db.session.get(Cafe, cafe_id)
+    if not cafe_to_update:
+        return jsonify(error={"error": "Cafe does not exist in database"}), 404
+    cafe_to_update.coffee_price = request.form["coffee_price"]
+    try:
+        db.session.commit()
+    except sqlalchemy.exc.IntegrityError as error_message:
+        return jsonify(error={"Could not update cafe's coffee price": f"{str(error_message)}"}), 404
+
+    return jsonify(success={"success": f"Successfully updated cafe's coffee price: {cafe_to_update.name}"}), 202
 
 
 ## HTTP GET - Read Record

@@ -35,11 +35,17 @@ def home():
 
 @app.route("/random")
 def random_cafe():
-    all_books = db.session.query(Cafe).all()
-    print(all_books)
-    random_cafe_choice = random.choice(all_books)
+    all_cafes = db.session.query(Cafe).all()
+    random_cafe_choice = random.choice(all_cafes)
 
     return jsonify(cafe=random_cafe_choice.to_dict())
+
+
+@app.route("/all")
+def all_cafes():
+    all_cafes = db.session.query(Cafe).all()
+
+    return jsonify(cafes=[cafe.to_dict() for cafe in all_cafes])
     
 
 ## HTTP GET - Read Record
